@@ -51,12 +51,12 @@ def code(df, column):
     df[column] = df[column].astype(int)
 
 
-# Load the data 
+# Load the data
 dirname = os.path.dirname(sys.argv[0])
 #http://kdd.ics.uci.edu/databases/kddcup99/kddcup.data_10_percent.gz
-kddtrain = pd.read_csv(os.path.join(dirname, 'data/kddcup.data_10_percent.gz'), compression='gzip')  
+kddtrain = pd.read_csv(os.path.join(dirname, 'data/kddcup.data_10_percent.gz'), compression='gzip')
 #'http://kdd.ics.uci.edu/databases/kddcup99/corrected.gz'
-kddtest = pd.read_csv(os.path.join(dirname, 'data/corrected.gz'), compression='gzip') 
+kddtest = pd.read_csv(os.path.join(dirname, 'data/corrected.gz'), compression='gzip')
 
 # rename columns because the csvs don't have headers
 kddtrain.columns = range(42)
@@ -81,8 +81,8 @@ print ('')
 # Define the model parameters to run
 common_params={'n_estimators':50, 'criterion':'entropy', 'n_jobs':-1}
 params = [
-    {}, 
-    {'class_weight':'balanced'}, 
+    {},
+    {'class_weight':'balanced'},
     {'class_weight':'balanced_subsample'},
     {'balanced':True}
 ]
