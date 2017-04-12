@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score
 
@@ -8,9 +10,12 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import gzip
-from urllib import urlopen
+from urllib.request import urlopen
 import time
 import os
 import sys
@@ -70,14 +75,14 @@ y_train = y[0:len(kddtrain)]
 X_test = X[-len(kddtest):,:]
 y_test = y[-len(kddtest):]
 
-print 'baseline: {}'.format(y_train.sum()*1.0 / len(y_train)) # the minority class makes up 1.7% of the training set
-print ''
+print ( 'baseline: {}'.format(y_train.sum()*1.0 / len(y_train)) )# the minority class makes up 1.7% of the training set
+print ('')
 
 # Define the model parameters to run
-common_params={'n_estimators':100, 'criterion':'entropy', 'n_jobs':-1}
+common_params={'n_estimators':50, 'criterion':'entropy', 'n_jobs':-1}
 params = [
     {}, 
-    {'class_weight':'auto'}, 
+    {'class_weight':'balanced'}, 
     {'class_weight':'balanced_subsample'},
     {'balanced':True}
 ]
@@ -90,18 +95,18 @@ for w in [.5,.75,1.25,1.5]:
     params.append({'class_weight': {False:p, True:int(n*w)}})
 
 # Run the models
-K = 10000 # the range of precision at k to show
-n = 10 # the number of runs per model
+K = 100# the range of precision at k to show
+n = 5 # the number of runs per model
 plt.figure()
 
 for p in params:
-    print 'forest parameters: {}'.format(p)
+    print ( 'forest parameters: {}'.format(p) )
     clf = RandomForestClassifier(**dict(common_params,**p))
 
     start = time.clock()
     auc = np.empty(n)
     precision = np.empty((n,K))
-    for i in xrange(n):
+    for i in range(n):
         clf.fit(X_train,y_train)
 
         y_score = clf.predict_proba(X_test)[:,1]
@@ -109,10 +114,10 @@ for p in params:
         precision[i] = precision_curve(y_test, y_score, K)
         auc[i] = roc_auc_score(y_test, y_score)
 
-    print 'time elapsed: {}'.format( (time.clock() - start) / 10.0)
-    print 'precision at {}: {} +/- {}'.format(K, np.mean(precision[:,K-1]), np.std(precision[:,K-1]))
-    print 'auc: {} +/- {}'.format(np.mean(auc), np.std(auc))
-    print ''
+    print ( 'time elapsed: {}'.format( (time.clock() - start) / 10.0) )
+    print ( 'precision at {}: {} +/- {}'.format(K, np.mean(precision[:,K-1]), np.std(precision[:,K-1])) )
+    print ( 'auc: {} +/- {}'.format(np.mean(auc), np.std(auc)) )
+    print ( '' )
 
     plt.plot(range(1,K+1), np.mean(precision, axis=0), label=str(p))
 
