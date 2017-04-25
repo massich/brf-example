@@ -54,9 +54,20 @@ def report(results, n_top=3):
             print("Parameters: {0}".format(results['params'][candidate]))
             print("")
 
+from sklearn.externals import joblib
 for dataset in datasets:
     X,y = dataset
     for name, clf in classifiers:
         grid_search = GridSearchCV(clf, param_grid=param_grid)
         grid_search.fit(X, y)
         print("-----{0:s}------".format(name))
+        report(grid_search.cv_results_)
+        joblib.dump(grid_search,"{0}.pkl".format(name))
+
+
+import glob
+import pylab
+xx = [joblib.load(x).cv_results_['rank_test_score'] for x in glob.glob("./*.pkl")]
+pylab.pcolor(np.asarray(xx))
+yy = [ joblib.load(x).cv_results_['mean_test_score'] for x in glob.glob("./*.pkl")]
+pylab.pcolor(np.asarray(yy))
