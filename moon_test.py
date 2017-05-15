@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from imblearn.datasets import make_imbalance
 from sklearn.datasets import make_moons
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
-from sklearn.model_selection import GridSearchCV, cross_val_score
+from sklearn.model_selection import GridSearchCV, cross_val_predict
+from sklearn.model_selection import StratifiedKFold
 
 RANDOM_STATE = 42
 N_JOBS = 40
@@ -39,38 +40,26 @@ def get_imbalance_ratios(num=6, min_ratio=0.01, max_ratio=0.5):
     return np.logspace( np.log10(min_ratio), np.log10(max_ratio), num=num)
 
 datasets = [(r, make_imbalance_dataset(original_dataset, ratio=r))
-            for r in get_imbalance_ratios(num=10)]
+            for r in get_imbalance_ratios(num=2)]
 
 # we need stratifiedKFold to preserve class distribution within each fold
-from sklearn.model_selection import StratifiedKFold
 skf = StratifiedKFold(n_splits=5)
 
+from sklearn.base import clone as clone_estimator
+from sklearn.externals.joblib import Memory
+memory = Memory(cachedir="./", verbose=0)
 
-# make scorer to evaluate the results
-#  - http://scikit-learn.org/stable/modules/model_evaluation.html
-#  - https://github.com/scikit-learn-contrib/imbalanced-learn/blob/master/imblearn/metrics/classification.py
-#
-# Use custom scoring to track multiple metrics
-from sklearn.metrics import precision_score
-from sklearn.metrics.scorer import make_scorer
+@memory.cache
+def compute_cross_val_predict(X, y, clf):
+    # clf should be a clone
+    print("..computing..", end='', flush=True)
+    return cross_val_predict(X=X, y=y, estimator=clf, cv=skf, n_jobs=N_JOBS)
 
-# The scorers can be a std scorer referenced by its name or one wrapped
-# by sklearn.metrics.scorer.make_scorer
-scoring = {'AUC Score': 'roc_auc', 'Precision': make_scorer(precision_score),
-           'recall': 'recall', 'F1 Score': 'f1'}
-
-
-scores = list()
 for dataset_ratio, dataset in datasets:
     X,y = dataset
     for name, clf in classifiers:
         print("compute: {0:.2f} imbalance, {1} ...".format(dataset_ratio, name), end='', flush=True)
-        this_score = cross_val_score(clf, X, y, cv=skf, n_jobs=N_JOBS, scoring=scoring)
-        scores.append((dataset_ratio, name, this_score))
+        ypred = compute_cross_val_predict(X, y, clone_estimator(clf))
         print("done")
 
 
-from sklearn.externals import joblib
-joblib.dump(scores, "scores.pkl")
-
-print('done')
