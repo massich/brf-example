@@ -57,7 +57,7 @@ from sklearn.metrics.scorer import make_scorer
 # The scorers can be a std scorer referenced by its name or one wrapped
 # by sklearn.metrics.scorer.make_scorer
 scoring = {'AUC Score': 'roc_auc', 'Precision': make_scorer(precision_score),
-           'recall': 'recall', 'F1 Score': 'f1'}
+           'recal': 'recall', 'F1 Score': 'f1'}
 
 
 scores = list()
